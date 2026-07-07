@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ProductService } from "@/services/product.service";
 import { useCartStore } from "@/store/cartStore";
@@ -36,6 +36,13 @@ export default function ProductDetailsContent({
   const [quantity, setQuantity] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<"desc" | "specs" | "reviews">("desc");
 
+  // Review state fields
+  const [localReviews, setLocalReviews] = useState<any[]>([]);
+  const [reviewerName, setReviewerName] = useState("");
+  const [newRating, setNewRating] = useState(5);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [newComment, setNewComment] = useState("");
+
   const addItem = useCartStore((state) => state.addItem);
   const openCartDrawer = useCartDrawerStore((state) => state.openDrawer);
 
@@ -44,6 +51,37 @@ export default function ProductDetailsContent({
     queryKey: ["product", productId],
     queryFn: () => ProductService.getProductDetails(productId),
   });
+
+  // Record recently viewed product on mount
+  useEffect(() => {
+    if (product) {
+      const currentRecent = localStorage.getItem("click_connect_recent");
+      let list: any[] = [];
+      if (currentRecent) {
+        try {
+          list = JSON.parse(currentRecent);
+        } catch (e) {}
+      }
+      // Filter out this product if already exists
+      list = list.filter((p) => p.id !== product.id);
+      // Prepend to top of list
+      list.unshift({
+        id: product.id,
+        title: product.title,
+        thumbnail: product.thumbnail,
+        price: product.price,
+        category: product.category,
+        brand: product.brand,
+        rating: product.rating,
+        discountPercentage: product.discountPercentage,
+        stock: product.stock,
+        description: product.description,
+      });
+      // Limit to max 10
+      list = list.slice(0, 10);
+      localStorage.setItem("click_connect_recent", JSON.stringify(list));
+    }
+  }, [product]);
 
 
 
@@ -88,6 +126,25 @@ export default function ProductDetailsContent({
   const handleBuyNow = () => {
     addItem(product, quantity);
     router.push("/checkout");
+  };
+
+  const handleReviewSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newReview = {
+      reviewerName: reviewerName.trim() || "Anonymous Buyer",
+      reviewerEmail: "customer@example.com",
+      rating: newRating,
+      comment: newComment.trim(),
+      date: new Date().toISOString(),
+    };
+    setLocalReviews((prev) => [newReview, ...prev]);
+    toast.success("Review Submitted", {
+      description: "Thank you for sharing your feedback!"
+    });
+    // Reset form fields
+    setReviewerName("");
+    setNewComment("");
+    setNewRating(5);
   };
 
   return (
@@ -346,34 +403,92 @@ export default function ProductDetailsContent({
         )}
 
         {activeTab === "reviews" && (
-          <div className="space-y-6">
-            {!product.reviews || product.reviews.length === 0 ? (
-              <p className="text-sm text-muted-foreground font-medium">No reviews posted yet.</p>
-            ) : (
-              product.reviews.map((rev, i) => (
-                <div key={i} className="border-b border-border/40 pb-5 flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm text-foreground">{rev.reviewerName}</span>
-                    <span className="text-muted-foreground text-xs">|</span>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(rev.date).toLocaleDateString()}
-                    </span>
+          <div className="space-y-8">
+            <div className="space-y-6">
+              {[...localReviews, ...(product.reviews || [])].length === 0 ? (
+                <p className="text-sm text-muted-foreground font-medium">No reviews posted yet.</p>
+              ) : (
+                [...localReviews, ...(product.reviews || [])].map((rev, i) => (
+                  <div key={i} className="border-b border-border/40 pb-5 flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-foreground">{rev.reviewerName}</span>
+                      <span className="text-muted-foreground text-xs">|</span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(rev.date).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex text-amber-400 gap-0.5">
+                      {Array.from({ length: 5 }).map((_, stIdx) => (
+                        <Star
+                          key={stIdx}
+                          className={`h-3.5 w-3.5 ${stIdx < rev.rating ? "fill-amber-400" : "text-muted"}`}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                      {rev.comment}
+                    </p>
                   </div>
-                  <div className="flex text-amber-400 gap-0.5">
-                    {Array.from({ length: 5 }).map((_, stIdx) => (
-                      <Star
-                        key={stIdx}
-                        className={`h-3.5 w-3.5 ${stIdx < rev.rating ? "fill-amber-400" : "text-muted"
-                          }`}
-                      />
-                    ))}
+                ))
+              )}
+            </div>
+
+            {/* Write a Review Form */}
+            <div className="border-t border-border/40 pt-6 mt-8 space-y-4">
+              <h3 className="font-bold text-sm text-foreground uppercase tracking-wider">Write a Customer Review</h3>
+              <form onSubmit={handleReviewSubmit} className="space-y-4 max-w-xl">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Your Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={reviewerName}
+                      onChange={(e) => setReviewerName(e.target.value)}
+                      placeholder="e.g. John Doe"
+                      className="w-full h-10 px-3.5 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/45 text-sm"
+                    />
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                    {rev.comment}
-                  </p>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Rating</label>
+                    <div className="flex items-center gap-1 h-10">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          type="button"
+                          key={star}
+                          onClick={() => setNewRating(star)}
+                          onMouseEnter={() => setHoverRating(star)}
+                          onMouseLeave={() => setHoverRating(0)}
+                          className="text-amber-400 p-0.5 hover:scale-110 active:scale-95 transition-transform cursor-pointer"
+                          aria-label={`Rate ${star} star`}
+                        >
+                          <Star className={`h-6 w-6 ${star <= (hoverRating || newRating) ? "fill-amber-400" : "text-muted"}`} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              ))
-            )}
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Comments</label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Tell us what you liked or disliked about this product..."
+                    className="w-full p-3.5 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/45 text-sm resize-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="px-5 h-10 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/95 transition-all shadow-sm cursor-pointer"
+                >
+                  Submit Review
+                </button>
+              </form>
+            </div>
           </div>
         )}
       </div>

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { ProductService } from "@/services/product.service";
 import ProductCard from "@/components/product/ProductCard";
+import RecentlyViewed from "@/components/product/RecentlyViewed";
 import {
   SlidersHorizontal,
   ChevronDown,
@@ -15,12 +16,15 @@ import {
   RotateCcw,
   Loader2,
   X,
+  Grid,
+  List,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 function ProductsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   // URL States
   const category = searchParams.get("category") || "all";
@@ -161,6 +165,32 @@ function ProductsContent() {
               <option value="rating-desc">Rating: High to Low</option>
             </select>
             <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          </div>
+
+          {/* Grid/List Toggle */}
+          <div className="hidden sm:flex items-center border border-border rounded-xl p-1 bg-card shrink-0">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                viewMode === "grid"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              aria-label="Grid View"
+            >
+              <Grid className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                viewMode === "list"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              aria-label="List View"
+            >
+              <List className="h-4 w-4" />
+            </button>
           </div>
 
           {/* Mobile Filter Button */}
@@ -354,9 +384,9 @@ function ProductsContent() {
           ) : (
             <>
               {/* Active list grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className={viewMode === "grid" ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" : "flex flex-col gap-5"}>
                 {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product.id} product={product} layout={viewMode} />
                 ))}
               </div>
 
@@ -573,6 +603,8 @@ function ProductsContent() {
         )}
       </AnimatePresence>
 
+      {/* Recently Viewed Tray */}
+      <RecentlyViewed />
     </div>
   );
 }

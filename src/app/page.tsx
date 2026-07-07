@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { ProductService } from "@/services/product.service";
 import ProductCard from "@/components/product/ProductCard";
+import HeroCarousel from "@/components/layout/HeroCarousel";
+import RecentlyViewed from "@/components/product/RecentlyViewed";
 import { toast } from "sonner";
 import {
   ArrowRight,
@@ -118,73 +120,7 @@ export default function HomePage() {
     <div className="flex-1 w-full relative transition-colors duration-200">
 
       {/* Hero Banner Section */}
-      <section className="relative overflow-hidden bg-radial from-muted/30 to-background border-b border-border/40 py-20 lg:py-32">
-        <div className="absolute top-0 right-0 w-[50%] h-[50%] rounded-full bg-primary/10 blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[50%] h-[50%] rounded-full bg-indigo-500/10 blur-[100px] pointer-events-none" />
-
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="max-w-3xl flex flex-col items-center sm:items-start text-center sm:text-left gap-6">
-
-            {/* Promo Tag */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3 }}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs font-semibold uppercase tracking-wider"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Get 20% Off With Code: <b>WELCOME20</b></span>
-            </motion.div>
-
-            {/* Headline */}
-            <motion.h1
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-              className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.1] text-foreground"
-            >
-              Click & Connect to <br />
-              <span className="bg-linear-to-r from-primary via-indigo-500 to-violet-600 bg-clip-text text-transparent">
-                Premium Shopping
-              </span>
-            </motion.h1>
-
-            {/* Subheading */}
-            <motion.p
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.2 }}
-              className="text-lg text-muted-foreground max-w-xl leading-relaxed"
-            >
-              Discover handpicked cosmetics, fragrances, and home decor items.
-              Beautiful layouts, instant checkout, and customizable dark themes.
-            </motion.p>
-
-            {/* CTAs */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.3 }}
-              className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"
-            >
-              <Link
-                href="/products"
-                className="flex items-center justify-center gap-2 px-6 h-12 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/95 transition-all shadow-lg shadow-primary/10"
-              >
-                <span>Shop Catalog</span>
-                <ArrowRight className="h-4.5 w-4.5" />
-              </Link>
-              <Link
-                href="/products?category=beauty"
-                className="flex items-center justify-center gap-2 px-6 h-12 rounded-xl bg-secondary text-secondary-foreground font-semibold hover:bg-secondary/80 transition-colors"
-              >
-                <span>View Beauty Products</span>
-              </Link>
-            </motion.div>
-
-          </div>
-        </div>
-      </section>
+      <HeroCarousel />
 
       {/* Feature Icons Section */}
       <section className="py-12 border-b border-border/40 bg-card/50">
@@ -426,6 +362,9 @@ export default function HomePage() {
               </form>
             </div>
           </motion.div>
+
+          {/* Recently Viewed Tray */}
+          <RecentlyViewed />
         </div>
       </section>
 

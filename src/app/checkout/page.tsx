@@ -44,6 +44,7 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [orderId, setOrderId] = useState("");
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const { items, getTotals, clearCart } = useCartStore();
   const user = useUserStore((state) => state.user);
@@ -52,6 +53,8 @@ export default function CheckoutPage() {
     register,
     handleSubmit,
     setValue,
+    trigger,
+    watch,
     formState: { errors },
   } = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
@@ -65,6 +68,8 @@ export default function CheckoutPage() {
       paymentMethod: "card",
     },
   });
+
+  const watchAllFields = watch();
 
   // Autofill user details when mounted
   useEffect(() => {
@@ -88,9 +93,22 @@ export default function CheckoutPage() {
     }
   }, [items, mounted, router, isSuccess]);
 
+  const handleNextStep1 = async () => {
+    const isStep1Valid = await trigger(["fullName", "email", "address", "city", "zipCode", "country"]);
+    if (isStep1Valid) {
+      setStep(2);
+    }
+  };
+
+  const handleNextStep2 = async () => {
+    const isStep2Valid = await trigger(["paymentMethod"]);
+    if (isStep2Valid) {
+      setStep(3);
+    }
+  };
+
   const onSubmit = async () => {
     setIsProcessing(true);
-    // Simulate order placement API
     try {
       await new Promise((resolve) => setTimeout(resolve, 2000));
       const generatedOrderId = generateOrderId();
@@ -190,200 +208,346 @@ export default function CheckoutPage() {
 
       <h1 className="text-3xl font-extrabold tracking-tight mb-8">Secure Checkout</h1>
 
+      {/* Stepper Wizard Indicator */}
+      <div className="mb-12 max-w-2xl mx-auto">
+        <div className="flex items-center justify-between relative">
+          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-0.5 bg-border z-0" />
+          <div
+            className="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 bg-primary transition-all duration-300 z-0"
+            style={{ width: step === 1 ? "0%" : step === 2 ? "50%" : "100%" }}
+          />
+
+          {/* Step 1 Indicator */}
+          <div className="flex flex-col items-center gap-2 relative z-10">
+            <button
+              type="button"
+              onClick={() => step > 1 && setStep(1)}
+              className={`h-10 w-10 rounded-full border-2 flex items-center justify-center font-bold text-sm transition-all cursor-pointer ${
+                step >= 1 ? "bg-primary border-primary text-primary-foreground" : "bg-card border-border text-muted-foreground"
+              }`}
+            >
+              1
+            </button>
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-foreground">Shipping</span>
+          </div>
+
+          {/* Step 2 Indicator */}
+          <div className="flex flex-col items-center gap-2 relative z-10">
+            <button
+              type="button"
+              onClick={async () => {
+                const isValid = await trigger(["fullName", "email", "address", "city", "zipCode", "country"]);
+                if (isValid && step > 2) setStep(2);
+              }}
+              className={`h-10 w-10 rounded-full border-2 flex items-center justify-center font-bold text-sm transition-all cursor-pointer ${
+                step >= 2 ? "bg-primary border-primary text-primary-foreground" : "bg-card border-border text-muted-foreground"
+              }`}
+            >
+              2
+            </button>
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-foreground">Payment</span>
+          </div>
+
+          {/* Step 3 Indicator */}
+          <div className="flex flex-col items-center gap-2 relative z-10">
+            <button
+              type="button"
+              className={`h-10 w-10 rounded-full border-2 flex items-center justify-center font-bold text-sm transition-all pointer-events-none ${
+                step >= 3 ? "bg-primary border-primary text-primary-foreground" : "bg-card border-border text-muted-foreground"
+              }`}
+            >
+              3
+            </button>
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-foreground">Review</span>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12 items-start">
 
         {/* Checkout Forms - Left column (2/3 width) */}
         <div className="lg:col-span-2 space-y-6">
-          <form onSubmit={handleSubmit(() => onSubmit())} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
-            {/* Shipping Address details */}
-            <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm glass space-y-4">
-              <h2 className="font-bold text-lg border-b border-border/40 pb-3.5 flex items-center gap-2">
-                <Truck className="h-5 w-5 text-primary" />
-                <span>Shipping & Billing Address</span>
-              </h2>
+            {step === 1 && (
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="space-y-6"
+              >
+                {/* Shipping Address details */}
+                <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm glass space-y-4">
+                  <h2 className="font-bold text-lg border-b border-border/40 pb-3.5 flex items-center gap-2">
+                    <Truck className="h-5 w-5 text-primary" />
+                    <span>Shipping & Billing Address</span>
+                  </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Full name */}
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Full Name
+                      </label>
+                      <input
+                        type="text"
+                        {...register("fullName")}
+                        className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${
+                          errors.fullName ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
+                        }`}
+                      />
+                      {errors.fullName && (
+                        <p className="text-xs text-destructive mt-1">{errors.fullName.message}</p>
+                      )}
+                    </div>
 
-                {/* Full name */}
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    {...register("fullName")}
-                    className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${errors.fullName ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
-                      }`}
-                  />
-                  {errors.fullName && (
-                    <p className="text-xs text-destructive mt-1">{errors.fullName.message}</p>
-                  )}
-                </div>
+                    {/* Email */}
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Email Address
+                      </label>
+                      <input
+                        type="email"
+                        {...register("email")}
+                        className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${
+                          errors.email ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
+                        }`}
+                      />
+                      {errors.email && (
+                        <p className="text-xs text-destructive mt-1">{errors.email.message}</p>
+                      )}
+                    </div>
 
-                {/* Email */}
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    {...register("email")}
-                    className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${errors.email ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
-                      }`}
-                  />
-                  {errors.email && (
-                    <p className="text-xs text-destructive mt-1">{errors.email.message}</p>
-                  )}
-                </div>
+                    {/* Street address */}
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Street Address
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Apartment, suite, unit, building, floor, street..."
+                        {...register("address")}
+                        className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${
+                          errors.address ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
+                        }`}
+                      />
+                      {errors.address && (
+                        <p className="text-xs text-destructive mt-1">{errors.address.message}</p>
+                      )}
+                    </div>
 
-                {/* Street address */}
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Street Address
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Apartment, suite, unit, building, floor, street..."
-                    {...register("address")}
-                    className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${errors.address ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
-                      }`}
-                  />
-                  {errors.address && (
-                    <p className="text-xs text-destructive mt-1">{errors.address.message}</p>
-                  )}
-                </div>
+                    {/* City */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        City
+                      </label>
+                      <input
+                        type="text"
+                        {...register("city")}
+                        className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${
+                          errors.city ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
+                        }`}
+                      />
+                      {errors.city && (
+                        <p className="text-xs text-destructive mt-1">{errors.city.message}</p>
+                      )}
+                    </div>
 
-                {/* City */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    {...register("city")}
-                    className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${errors.city ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
-                      }`}
-                  />
-                  {errors.city && (
-                    <p className="text-xs text-destructive mt-1">{errors.city.message}</p>
-                  )}
-                </div>
+                    {/* Zip */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        ZIP / Postal Code
+                      </label>
+                      <input
+                        type="text"
+                        {...register("zipCode")}
+                        className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${
+                          errors.zipCode ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
+                        }`}
+                      />
+                      {errors.zipCode && (
+                        <p className="text-xs text-destructive mt-1">{errors.zipCode.message}</p>
+                      )}
+                    </div>
 
-                {/* Zip */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    ZIP / Postal Code
-                  </label>
-                  <input
-                    type="text"
-                    {...register("zipCode")}
-                    className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${errors.zipCode ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
-                      }`}
-                  />
-                  {errors.zipCode && (
-                    <p className="text-xs text-destructive mt-1">{errors.zipCode.message}</p>
-                  )}
-                </div>
-
-                {/* Country */}
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Country
-                  </label>
-                  <input
-                    type="text"
-                    {...register("country")}
-                    className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${errors.country ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
-                      }`}
-                  />
-                  {errors.country && (
-                    <p className="text-xs text-destructive mt-1">{errors.country.message}</p>
-                  )}
-                </div>
-
-              </div>
-            </div>
-
-            {/* Payment Method details */}
-            <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm glass space-y-4">
-              <h2 className="font-bold text-lg border-b border-border/40 pb-3.5 flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-primary" />
-                <span>Payment Method</span>
-              </h2>
-
-              <div className="space-y-3">
-                {/* Credit card */}
-                <label className="flex items-center justify-between p-4 rounded-xl border border-border bg-muted/10 cursor-pointer transition-colors hover:bg-muted/20">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      value="card"
-                      {...register("paymentMethod")}
-                      className="text-primary focus:ring-primary"
-                    />
-                    <div>
-                      <p className="text-sm font-semibold">Credit / Debit Card</p>
-                      <p className="text-xs text-muted-foreground">Visa, MasterCard, Amex</p>
+                    {/* Country */}
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Country
+                      </label>
+                      <input
+                        type="text"
+                        {...register("country")}
+                        className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${
+                          errors.country ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
+                        }`}
+                      />
+                      {errors.country && (
+                        <p className="text-xs text-destructive mt-1">{errors.country.message}</p>
+                      )}
                     </div>
                   </div>
-                  <CreditCard className="h-5 w-5 text-muted-foreground" />
-                </label>
+                </div>
 
-                {/* PayPal */}
-                <label className="flex items-center justify-between p-4 rounded-xl border border-border bg-muted/10 cursor-pointer transition-colors hover:bg-muted/20">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      value="paypal"
-                      {...register("paymentMethod")}
-                      className="text-primary focus:ring-primary"
-                    />
-                    <div>
-                      <p className="text-sm font-semibold">PayPal Wallet</p>
-                      <p className="text-xs text-muted-foreground">Express fast checkouts</p>
+                <button
+                  type="button"
+                  onClick={handleNextStep1}
+                  className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-2 hover:bg-primary/95 transition-all shadow-md shadow-primary/10 cursor-pointer animate-pulse"
+                >
+                  <span>Continue to Payment</span>
+                  <ArrowRight className="h-4.5 w-4.5" />
+                </button>
+              </motion.div>
+            )}
+
+            {step === 2 && (
+              <motion.div
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="space-y-6"
+              >
+                {/* Payment Method details */}
+                <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm glass space-y-4">
+                  <h2 className="font-bold text-lg border-b border-border/40 pb-3.5 flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-primary" />
+                    <span>Payment Method</span>
+                  </h2>
+
+                  <div className="space-y-3">
+                    {/* Credit card */}
+                    <label className="flex items-center justify-between p-4 rounded-xl border border-border bg-muted/10 cursor-pointer transition-colors hover:bg-muted/20">
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="radio"
+                          value="card"
+                          {...register("paymentMethod")}
+                          className="text-primary focus:ring-primary"
+                        />
+                        <div>
+                          <p className="text-sm font-semibold">Credit / Debit Card</p>
+                          <p className="text-xs text-muted-foreground">Visa, MasterCard, Amex</p>
+                        </div>
+                      </div>
+                      <CreditCard className="h-5 w-5 text-muted-foreground" />
+                    </label>
+
+                    {/* PayPal */}
+                    <label className="flex items-center justify-between p-4 rounded-xl border border-border bg-muted/10 cursor-pointer transition-colors hover:bg-muted/20">
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="radio"
+                          value="paypal"
+                          {...register("paymentMethod")}
+                          className="text-primary focus:ring-primary"
+                        />
+                        <div>
+                          <p className="text-sm font-semibold">PayPal Wallet</p>
+                          <p className="text-xs text-muted-foreground">Express fast checkouts</p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-bold text-blue-500 italic">PayPal</span>
+                    </label>
+
+                    {/* Cash on delivery */}
+                    <label className="flex items-center justify-between p-4 rounded-xl border border-border bg-muted/10 cursor-pointer transition-colors hover:bg-muted/20">
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="radio"
+                          value="cod"
+                          {...register("paymentMethod")}
+                          className="text-primary focus:ring-primary"
+                        />
+                        <div>
+                          <p className="text-sm font-semibold">Cash On Delivery (COD)</p>
+                          <p className="text-xs text-muted-foreground">Pay with cash upon receipt</p>
+                        </div>
+                      </div>
+                      <Truck className="h-5 w-5 text-muted-foreground" />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="flex-1 h-12 rounded-xl border border-border bg-card hover:bg-muted/40 font-bold text-sm text-foreground transition-colors cursor-pointer"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNextStep2}
+                    className="flex-1 h-12 rounded-xl bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-2 hover:bg-primary/95 transition-all shadow-md shadow-primary/10 cursor-pointer animate-pulse"
+                  >
+                    <span>Review Order Details</span>
+                    <ArrowRight className="h-4.5 w-4.5" />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 3 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="space-y-6"
+              >
+                {/* Checkout Summary review panel */}
+                <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm glass space-y-5">
+                  <h2 className="font-bold text-lg border-b border-border/40 pb-3 flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-primary" />
+                    <span>Review Information Details</span>
+                  </h2>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs sm:text-sm">
+                    <div className="space-y-1">
+                      <p className="text-muted-foreground uppercase font-bold text-[10px] tracking-wider">Shipping Destination</p>
+                      <p className="font-bold text-foreground mt-1">{watchAllFields.fullName}</p>
+                      <p className="text-muted-foreground">{watchAllFields.address}</p>
+                      <p className="text-muted-foreground">{watchAllFields.city}, {watchAllFields.zipCode}, {watchAllFields.country}</p>
+                      <p className="text-muted-foreground/80 mt-1">{watchAllFields.email}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-muted-foreground uppercase font-bold text-[10px] tracking-wider">Selected Payment Option</p>
+                      <p className="font-bold text-foreground capitalize mt-1">
+                        {watchAllFields.paymentMethod === "card"
+                          ? "Credit / Debit Card"
+                          : watchAllFields.paymentMethod === "paypal"
+                          ? "PayPal Wallet"
+                          : "Cash on Delivery (COD)"}
+                      </p>
                     </div>
                   </div>
-                  <span className="text-xs font-bold text-blue-500 italic">PayPal</span>
-                </label>
+                </div>
 
-                {/* Cash on delivery */}
-                <label className="flex items-center justify-between p-4 rounded-xl border border-border bg-muted/10 cursor-pointer transition-colors hover:bg-muted/20">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      value="cod"
-                      {...register("paymentMethod")}
-                      className="text-primary focus:ring-primary"
-                    />
-                    <div>
-                      <p className="text-sm font-semibold">Cash On Delivery (COD)</p>
-                      <p className="text-xs text-muted-foreground">Pay with cash upon receipt</p>
-                    </div>
-                  </div>
-                  <Truck className="h-5 w-5 text-muted-foreground" />
-                </label>
-              </div>
-            </div>
-
-            {/* Form submit triggers */}
-            <button
-              type="submit"
-              disabled={isProcessing}
-              className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-2 hover:bg-primary/95 transition-all shadow-md shadow-primary/10 disabled:opacity-75 disabled:cursor-not-allowed"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="h-4.5 w-4.5 animate-spin" />
-                  <span>Processing Payment...</span>
-                </>
-              ) : (
-                <>
-                  <Lock className="h-4 w-4" />
-                  <span>Pay & Place Order (${totals.grandTotal.toFixed(2)})</span>
-                </>
-              )}
-            </button>
+                <div className="flex gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setStep(2)}
+                    className="w-1/3 h-12 rounded-xl border border-border bg-card hover:bg-muted/40 font-bold text-sm text-foreground transition-colors cursor-pointer"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isProcessing}
+                    className="flex-1 h-12 rounded-xl bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-2 hover:bg-primary/95 transition-all shadow-md shadow-primary/10 disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="h-4.5 w-4.5 animate-spin" />
+                        <span>Processing Payment...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="h-4 w-4" />
+                        <span>Pay & Place Order (${totals.grandTotal.toFixed(2)})</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            )}
 
           </form>
         </div>
@@ -461,3 +625,5 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
+
