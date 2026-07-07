@@ -5,8 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { Product } from "@/types/product";
 import { useCartStore } from "@/store/cartStore";
+import { useQuickViewStore } from "@/store/quickViewStore";
+import { useCompareStore } from "@/store/compareStore";
+import { useCartDrawerStore } from "@/store/cartDrawerStore";
 import { toast } from "sonner";
-import { Star, ShoppingBag, Eye } from "lucide-react";
+import { Star, ShoppingBag, Eye, Scale, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface ProductCardProps {
@@ -15,6 +18,11 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
+  const openQuickView = useQuickViewStore((state) => state.openModal);
+  const { items: compareItems, addToCompare, removeFromCompare } = useCompareStore();
+  const openCartDrawer = useCartDrawerStore((state) => state.openDrawer);
+
+  const isComparing = compareItems.some((item) => item.id === product.id);
 
   const discountAmount = product.discountPercentage;
   const originalPrice = Math.round((product.price * 100) / (100 - discountAmount));
@@ -25,6 +33,25 @@ export default function ProductCard({ product }: ProductCardProps) {
     toast.success("Added to cart", {
       description: `${product.title} has been added to your shopping cart.`,
     });
+    setTimeout(() => {
+      openCartDrawer();
+    }, 150);
+  };
+
+  const handleToggleCompare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isComparing) {
+      removeFromCompare(product.id);
+    } else {
+      addToCompare(product);
+    }
+  };
+
+  const handleQuickView = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openQuickView(product);
   };
 
   // Stock Badge Color
@@ -46,6 +73,8 @@ export default function ProductCard({ product }: ProductCardProps) {
     return null;
   };
 
+  const compareTopClass = (product.stock <= 0 || product.stock < 10) ? "top-12" : "top-3";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}
@@ -60,6 +89,19 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* Stock Badge */}
         {getStockBadge()}
+
+        {/* Compare Checkbox Button */}
+        <button
+          onClick={handleToggleCompare}
+          className={`absolute ${compareTopClass} left-3 z-20 flex h-7 items-center gap-1.5 px-2.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm border transition-all cursor-pointer ${
+            isComparing
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-background/85 backdrop-blur-md text-foreground border-border hover:bg-background"
+          }`}
+        >
+          <Scale className="h-3.5 w-3.5" />
+          <span>{isComparing ? "Comparing" : "Compare"}</span>
+        </button>
 
         {/* Discount Badge */}
         {discountAmount > 0 && (
@@ -78,17 +120,24 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* Action Overlays */}
         <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
-          <Link
-            href={`/products/${product.id}`}
+          <button
+            onClick={handleQuickView}
             className="flex h-11 w-11 items-center justify-center rounded-full bg-background hover:bg-primary hover:text-primary-foreground text-foreground shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300"
-            aria-label="View Details"
+            aria-label="Quick View Product"
           >
             <Eye className="h-5 w-5" />
+          </button>
+          <Link
+            href={`/products/${product.id}`}
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-background hover:bg-primary hover:text-primary-foreground text-foreground shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-75"
+            aria-label="View Full Details"
+          >
+            <ArrowRight className="h-5 w-5" />
           </Link>
           <button
             onClick={handleAddToCart}
             disabled={product.stock <= 0}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-background hover:bg-primary hover:text-primary-foreground text-foreground shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-75 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-background hover:bg-primary hover:text-primary-foreground text-foreground shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-100 disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Add to Cart"
           >
             <ShoppingBag className="h-5 w-5" />

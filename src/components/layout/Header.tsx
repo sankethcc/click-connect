@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
+import { useCartDrawerStore } from "@/store/cartDrawerStore";
 import { useTheme } from "next-themes";
 import { useUserStore } from "@/store/userStore";
 import { getInitials } from "@/lib/utils";
@@ -58,6 +59,7 @@ export default function Header() {
 
   const items = useCartStore((state) => state.items);
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const openCartDrawer = useCartDrawerStore((state) => state.openDrawer);
 
   // Sync search input with URL search param
   useEffect(() => {
@@ -279,9 +281,9 @@ export default function Header() {
             </Link>
 
             {/* Cart */}
-            <Link
-              href="/cart"
-              className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors relative"
+            <button
+              onClick={openCartDrawer}
+              className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors relative cursor-pointer"
               aria-label="Shopping Cart"
             >
               <ShoppingBag className="h-5 w-5" />
@@ -290,7 +292,7 @@ export default function Header() {
                   {totalItems}
                 </span>
               )}
-            </Link>
+            </button>
 
             {/* User Profile / Login */}
             <div className="relative" ref={dropdownRef}>
@@ -458,13 +460,15 @@ export default function Header() {
                 >
                   Wishlist
                 </Link>
-                <Link
-                  href="/cart"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-2 py-1.5 hover:text-primary transition-colors border-b border-border/40"
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    openCartDrawer();
+                  }}
+                  className="w-full text-left px-2 py-1.5 hover:text-primary transition-colors border-b border-border/40 cursor-pointer"
                 >
                   My Cart ({totalItems})
-                </Link>
+                </button>
               </nav>
 
               {/* Drawer Footer (User Profile & Logout) */}

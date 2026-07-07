@@ -4,7 +4,9 @@ import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ProductService } from "@/services/product.service";
 import { useCartStore } from "@/store/cartStore";
+import { useCartDrawerStore } from "@/store/cartDrawerStore";
 import ProductCard from "@/components/product/ProductCard";
+import RelatedProducts from "@/components/product/RelatedProducts";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import {
@@ -35,6 +37,7 @@ export default function ProductDetailsContent({
   const [activeTab, setActiveTab] = useState<"desc" | "specs" | "reviews">("desc");
 
   const addItem = useCartStore((state) => state.addItem);
+  const openCartDrawer = useCartDrawerStore((state) => state.openDrawer);
 
   // Fetch product detail
   const { data: product, isLoading, isError } = useQuery({
@@ -42,12 +45,7 @@ export default function ProductDetailsContent({
     queryFn: () => ProductService.getProductDetails(productId),
   });
 
-  // Fetch related products in the same category
-  const { data: relatedData } = useQuery({
-    queryKey: ["related-products", product?.category],
-    queryFn: () => ProductService.getProducts({ category: product?.category, limit: 5 }),
-    enabled: !!product,
-  });
+
 
   if (isLoading) {
     return (
@@ -76,13 +74,15 @@ export default function ProductDetailsContent({
   }
 
   const originalPrice = Math.round((product.price * 100) / (100 - product.discountPercentage));
-  const relatedProducts = relatedData?.products.filter((p) => p.id !== product.id).slice(0, 4) || [];
 
   const handleAddToCart = () => {
     addItem(product, quantity);
     toast.success("Added to cart", {
       description: `${quantity}x ${product.title} added to your shopping cart.`,
     });
+    setTimeout(() => {
+      openCartDrawer();
+    }, 150);
   };
 
   const handleBuyNow = () => {
@@ -378,17 +378,8 @@ export default function ProductDetailsContent({
         )}
       </div>
 
-      {/* Related Products Grid */}
-      {relatedProducts.length > 0 && (
-        <section className="border-t border-border/40 pt-16 mt-8">
-          <h2 className="text-2xl font-extrabold tracking-tight mb-8">Related Products</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {relatedProducts.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Related Products */}
+      <RelatedProducts category={product.category} currentProductId={product.id} />
 
     </div>
   );
