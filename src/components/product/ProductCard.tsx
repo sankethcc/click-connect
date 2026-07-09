@@ -18,10 +18,17 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, layout = "grid" }: ProductCardProps) {
+  const cartItems = useCartStore((state) => state.items);
   const addItem = useCartStore((state) => state.addItem);
+  const increaseQuantity = useCartStore((state) => state.increaseQuantity);
+  const decreaseQuantity = useCartStore((state) => state.decreaseQuantity);
+  const removeItem = useCartStore((state) => state.removeItem);
+
   const openQuickView = useQuickViewStore((state) => state.openModal);
   const { items: compareItems, addToCompare, removeFromCompare } = useCompareStore();
   const openCartDrawer = useCartDrawerStore((state) => state.openDrawer);
+
+  const cartItem = cartItems.find((item) => item.product.id === product.id);
 
   const isComparing = compareItems.some((item) => item.id === product.id);
 
@@ -188,14 +195,55 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
               )}
             </div>
 
-            <button
-              onClick={handleAddToCart}
-              disabled={product.stock <= 0}
-              className="flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl bg-primary hover:bg-primary/95 text-primary-foreground text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
-            >
-              <ShoppingBag className="h-4 w-4" />
-              <span>Add to Cart</span>
-            </button>
+            {cartItem ? (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (cartItem.quantity === 1) {
+                      removeItem(product.id);
+                      toast.info("Removed from cart", {
+                        description: `${product.title} has been removed.`,
+                      });
+                    } else {
+                      decreaseQuantity(product.id);
+                    }
+                  }}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background hover:bg-muted text-foreground transition-all font-bold cursor-pointer"
+                  aria-label="Decrease quantity"
+                >
+                  -
+                </button>
+                <span className="w-8 text-center text-sm font-bold text-foreground">
+                  {cartItem.quantity}
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (cartItem.quantity >= product.stock) {
+                      toast.error("Stock limit reached", {
+                        description: `Only ${product.stock} items are available in stock.`,
+                      });
+                      return;
+                    }
+                    increaseQuantity(product.id);
+                  }}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background hover:bg-muted text-foreground transition-all font-bold cursor-pointer"
+                  aria-label="Increase quantity"
+                >
+                  +
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleAddToCart}
+                disabled={product.stock <= 0}
+                className="flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl bg-primary hover:bg-primary/95 text-primary-foreground text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
+              >
+                <ShoppingBag className="h-4 w-4" />
+                <span>Add to Cart</span>
+              </button>
+            )}
           </div>
         </div>
       </motion.div>
@@ -264,10 +312,18 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
           <button
             onClick={handleAddToCart}
             disabled={product.stock <= 0}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-background hover:bg-primary hover:text-primary-foreground text-foreground shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-100 disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="Add to Cart"
+            className={`flex h-11 w-11 items-center justify-center rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-100 disabled:opacity-50 disabled:cursor-not-allowed ${
+              cartItem
+                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                : "bg-background hover:bg-primary hover:text-primary-foreground text-foreground"
+            }`}
+            aria-label={cartItem ? `In Cart: ${cartItem.quantity}` : "Add to Cart"}
           >
-            <ShoppingBag className="h-5 w-5" />
+            {cartItem ? (
+              <span className="text-xs font-bold">{cartItem.quantity}</span>
+            ) : (
+              <ShoppingBag className="h-5 w-5" />
+            )}
           </button>
         </div>
       </div>
@@ -321,14 +377,55 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
             </span>
           </div>
 
-          <button
-            onClick={handleAddToCart}
-            disabled={product.stock <= 0}
-            className="flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-xl bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ShoppingBag className="h-3.5 w-3.5" />
-            <span>Add</span>
-          </button>
+          {cartItem ? (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (cartItem.quantity === 1) {
+                    removeItem(product.id);
+                    toast.info("Removed from cart", {
+                      description: `${product.title} has been removed.`,
+                    });
+                  } else {
+                    decreaseQuantity(product.id);
+                  }
+                }}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background hover:bg-muted text-foreground transition-all font-bold cursor-pointer text-sm"
+                aria-label="Decrease quantity"
+              >
+                -
+              </button>
+              <span className="w-6 text-center text-xs font-bold text-foreground">
+                {cartItem.quantity}
+              </span>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (cartItem.quantity >= product.stock) {
+                    toast.error("Stock limit reached", {
+                      description: `Only ${product.stock} items are available in stock.`,
+                    });
+                    return;
+                  }
+                  increaseQuantity(product.id);
+                }}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background hover:bg-muted text-foreground transition-all font-bold cursor-pointer text-sm"
+                aria-label="Increase quantity"
+              >
+                +
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleAddToCart}
+              disabled={product.stock <= 0}
+              className="flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-xl bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <ShoppingBag className="h-3.5 w-3.5" />
+              <span>Add</span>
+            </button>
+          )}
         </div>
 
       </div>

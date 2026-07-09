@@ -3,16 +3,20 @@
 import React, { useState, useEffect } from "react";
 import ProductCard from "./ProductCard";
 import { Clock, Trash2 } from "lucide-react";
+import { Product } from "@/types/product";
 
 export default function RecentlyViewed() {
-  const [list, setList] = useState<any[]>([]);
+  const [list, setList] = useState<Product[]>([]);
 
   useEffect(() => {
     const currentRecent = localStorage.getItem("click_connect_recent");
     if (currentRecent) {
       try {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setList(JSON.parse(currentRecent));
-      } catch (e) {}
+      } catch {
+        // Ignored
+      }
     }
   }, []);
 
@@ -45,8 +49,8 @@ export default function RecentlyViewed() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-5 gap-6">
-        {list.slice(0, 5).map((product) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {list.slice(0, 4).map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
       </div>
