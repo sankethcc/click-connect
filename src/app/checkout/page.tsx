@@ -211,10 +211,10 @@ export default function CheckoutPage() {
       {/* Stepper Wizard Indicator */}
       <div className="mb-12 max-w-2xl mx-auto">
         <div className="flex items-center justify-between relative">
-          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-0.5 bg-border z-0" />
+          <div className="absolute left-5 right-5 top-1/3 -translate-y-1/2 h-0.5 bg-border z-0" />
           <div
-            className="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 bg-primary transition-all duration-300 z-0"
-            style={{ width: step === 1 ? "0%" : step === 2 ? "50%" : "100%" }}
+            className="absolute left-5 top-1/3 -translate-y-1/2 h-0.5 bg-primary transition-all duration-300 z-0"
+            style={{ width: step === 1 ? "0%" : step === 2 ? "45%" : "95%" }}
           />
 
           {/* Step 1 Indicator */}
@@ -222,9 +222,8 @@ export default function CheckoutPage() {
             <button
               type="button"
               onClick={() => step > 1 && setStep(1)}
-              className={`h-10 w-10 rounded-full border-2 flex items-center justify-center font-bold text-sm transition-all cursor-pointer ${
-                step >= 1 ? "bg-primary border-primary text-primary-foreground" : "bg-card border-border text-muted-foreground"
-              }`}
+              className={`h-10 w-10 rounded-full border-2 flex items-center justify-center font-bold text-sm transition-all cursor-pointer ${step >= 1 ? "bg-primary border-primary text-primary-foreground" : "bg-card border-border text-muted-foreground"
+                }`}
             >
               1
             </button>
@@ -239,9 +238,8 @@ export default function CheckoutPage() {
                 const isValid = await trigger(["fullName", "email", "address", "city", "zipCode", "country"]);
                 if (isValid && step > 2) setStep(2);
               }}
-              className={`h-10 w-10 rounded-full border-2 flex items-center justify-center font-bold text-sm transition-all cursor-pointer ${
-                step >= 2 ? "bg-primary border-primary text-primary-foreground" : "bg-card border-border text-muted-foreground"
-              }`}
+              className={`h-10 w-10 rounded-full border-2 flex items-center justify-center font-bold text-sm transition-all cursor-pointer ${step >= 2 ? "bg-primary border-primary text-primary-foreground" : "bg-card border-border text-muted-foreground"
+                }`}
             >
               2
             </button>
@@ -252,9 +250,8 @@ export default function CheckoutPage() {
           <div className="flex flex-col items-center gap-2 relative z-10">
             <button
               type="button"
-              className={`h-10 w-10 rounded-full border-2 flex items-center justify-center font-bold text-sm transition-all pointer-events-none ${
-                step >= 3 ? "bg-primary border-primary text-primary-foreground" : "bg-card border-border text-muted-foreground"
-              }`}
+              className={`h-10 w-10 rounded-full border-2 flex items-center justify-center font-bold text-sm transition-all pointer-events-none ${step >= 3 ? "bg-primary border-primary text-primary-foreground" : "bg-card border-border text-muted-foreground"
+                }`}
             >
               3
             </button>
@@ -291,9 +288,8 @@ export default function CheckoutPage() {
                       <input
                         type="text"
                         {...register("fullName")}
-                        className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${
-                          errors.fullName ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
-                        }`}
+                        className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${errors.fullName ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
+                          }`}
                       />
                       {errors.fullName && (
                         <p className="text-xs text-destructive mt-1">{errors.fullName.message}</p>
@@ -308,9 +304,8 @@ export default function CheckoutPage() {
                       <input
                         type="email"
                         {...register("email")}
-                        className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${
-                          errors.email ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
-                        }`}
+                        className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${errors.email ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
+                          }`}
                       />
                       {errors.email && (
                         <p className="text-xs text-destructive mt-1">{errors.email.message}</p>
@@ -326,9 +321,8 @@ export default function CheckoutPage() {
                         type="text"
                         placeholder="Apartment, suite, unit, building, floor, street..."
                         {...register("address")}
-                        className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${
-                          errors.address ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
-                        }`}
+                        className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${errors.address ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
+                          }`}
                       />
                       {errors.address && (
                         <p className="text-xs text-destructive mt-1">{errors.address.message}</p>
@@ -343,9 +337,8 @@ export default function CheckoutPage() {
                       <input
                         type="text"
                         {...register("city")}
-                        className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${
-                          errors.city ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
-                        }`}
+                        className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${errors.city ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
+                          }`}
                       />
                       {errors.city && (
                         <p className="text-xs text-destructive mt-1">{errors.city.message}</p>
@@ -360,9 +353,8 @@ export default function CheckoutPage() {
                       <input
                         type="text"
                         {...register("zipCode")}
-                        className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${
-                          errors.zipCode ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
-                        }`}
+                        className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${errors.zipCode ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
+                          }`}
                       />
                       {errors.zipCode && (
                         <p className="text-xs text-destructive mt-1">{errors.zipCode.message}</p>
@@ -377,9 +369,8 @@ export default function CheckoutPage() {
                       <input
                         type="text"
                         {...register("country")}
-                        className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${
-                          errors.country ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
-                        }`}
+                        className={`w-full h-11 px-4 rounded-xl border bg-muted/20 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm transition-all ${errors.country ? "border-destructive focus:ring-destructive/30" : "border-border focus:border-primary"
+                          }`}
                       />
                       {errors.country && (
                         <p className="text-xs text-destructive mt-1">{errors.country.message}</p>
@@ -513,8 +504,8 @@ export default function CheckoutPage() {
                         {watchAllFields.paymentMethod === "card"
                           ? "Credit / Debit Card"
                           : watchAllFields.paymentMethod === "paypal"
-                          ? "PayPal Wallet"
-                          : "Cash on Delivery (COD)"}
+                            ? "PayPal Wallet"
+                            : "Cash on Delivery (COD)"}
                       </p>
                     </div>
                   </div>
