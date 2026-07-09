@@ -32,6 +32,7 @@ function LoginContent() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -55,7 +56,9 @@ function LoginContent() {
       toast.success("Welcome back!", {
         description: `Successfully signed in as ${user.firstName}.`,
       });
-      router.push(redirectTo);
+      // Force a hard redirect so that Next.js middleware and Server Components
+      // immediately read the newly written session cookies without hitting router cache.
+      window.location.href = redirectTo;
     } catch (error: unknown) {
       console.error("Login failed:", error);
       let errorMessage = "Invalid username or password. Please try again.";
@@ -72,6 +75,12 @@ function LoginContent() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDemoLogin = () => {
+    setValue("username", "sophiab", { shouldValidate: true });
+    setValue("password", "sophiabpass", { shouldValidate: true });
+    onSubmit({ username: "sophiab", password: "sophiabpass", rememberMe: false });
   };
 
   return (
@@ -202,7 +211,7 @@ function LoginContent() {
             <p className="font-bold mb-1.5 text-primary uppercase tracking-wider">
               Demo Credentials
             </p>
-            <div className="flex flex-col gap-1 font-medium">
+            <div className="flex flex-col gap-1.5 font-medium">
               <p>
                 <span className="text-muted-foreground">Username:</span>{" "}
                 <code className="bg-muted px-1.5 py-0.5 rounded font-bold">sophiab</code>
@@ -212,6 +221,14 @@ function LoginContent() {
                 <code className="bg-muted px-1.5 py-0.5 rounded font-bold">sophiabpass</code>
               </p>
             </div>
+            <button
+              type="button"
+              onClick={handleDemoLogin}
+              disabled={isLoading}
+              className="mt-4 w-full h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 font-bold transition-all flex items-center justify-center gap-1.5 text-xs cursor-pointer shadow-sm disabled:opacity-50"
+            >
+              <span>Login with Demo Credentials</span>
+            </button>
           </div>
 
         </motion.div>
